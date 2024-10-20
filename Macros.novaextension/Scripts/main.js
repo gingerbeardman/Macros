@@ -8,6 +8,7 @@ var macrosView;
 var lastCursorPosition = null;
 var initialCursorPosition = null;
 var lastSelection = null;
+var lastContent = "";
 
 class MacrosDataProvider {
     getChildren(element) {
@@ -173,44 +174,51 @@ exports.activate = function() {
         editor.onDidChange(() => {
             if (isRecording) {
                 let newPosition = editor.selectedRange.start;
+                let newContent = editor.getTextInRange(new Range(0, editor.document.length));
                 
                 if (lastCursorPosition === null) {
                     lastCursorPosition = newPosition;
+                    lastContent = newContent;
                     return;
                 }
                 
-                let diff = newPosition - lastCursorPosition;
+                // Find the difference between the old and new content
+                let diff = findDifference(lastContent, newContent);
                 
-                if (diff > 0) {
-                    // Characters inserted
-                    let insertedText = editor.getTextInRange(new Range(lastCursorPosition, newPosition));
+                if (diff.inserted) {
                     currentMacro.push({
                         type: "INS",
-                        text: insertedText
+                        text: diff.text
                     });
-                } else if (diff < 0) {
-                    // Characters deleted
-                    let count = Math.abs(diff);
+                    // Adjust cursor position after insertion
+                    newPosition = diff.position + diff.text.length;
+                } else if (diff.deleted) {
                     currentMacro.push({
                         type: "DEL",
-                        count: count
+                        count: diff.count
+                    });
+                    // Adjust cursor position after deletion
+                    newPosition = diff.position;
+                }
+                
+                // Update cursor position if it has changed significantly
+                if (Math.abs(newPosition - lastCursorPosition) > diff.text?.length || 0) {
+                    currentMacro.push({
+                        type: "POS",
+                        delta: newPosition - lastCursorPosition
                     });
                 }
                 
                 lastCursorPosition = newPosition;
+                lastContent = newContent;
+                lastSelection = null; // Clear last selection after content change
             }
         });
-    
+
         editor.onDidChangeSelection(() => {
             if (isRecording) {
                 let newSelection = editor.selectedRange;
                 
-                if (lastSelection === null) {
-                    lastSelection = newSelection;
-                    lastCursorPosition = newSelection.start;
-                    return;
-                }
-        
                 if (!areSelectionsEqual(newSelection, lastSelection)) {
                     let selectionStartDelta = newSelection.start - lastCursorPosition;
                     let selectionLength = newSelection.end - newSelection.start;
@@ -221,24 +229,40 @@ exports.activate = function() {
                             delta: selectionStartDelta,
                             length: selectionLength
                         });
-                    } else {
-                        // If it's just a cursor movement, record it as a position change
-                        currentMacro.push({
-                            type: "POS",
-                            delta: selectionStartDelta
-                        });
                     }
                     
                     lastSelection = newSelection;
-                    lastCursorPosition = newSelection.end;  // Update to end of selection
+                    lastCursorPosition = newSelection.end;
                 }
             }
         });
     });
 }
 
+function findDifference(oldContent, newContent) {
+    let i = 0;
+    while (i < oldContent.length && i < newContent.length && oldContent[i] === newContent[i]) {
+        i++;
+    }
+    
+    let j = 1;
+    while (j <= oldContent.length - i && j <= newContent.length - i &&
+           oldContent[oldContent.length - j] === newContent[newContent.length - j]) {
+        j++;
+    }
+    j--;
+    
+    if (i < newContent.length - j) {
+        return { inserted: true, text: newContent.slice(i, newContent.length - j), position: i };
+    } else if (i < oldContent.length - j) {
+        return { deleted: true, count: oldContent.length - j - i, position: i };
+    }
+    
+    return { noChange: true };
+}
+
 function areSelectionsEqual(sel1, sel2) {
-    return sel1.start === sel2.start && sel1.end === sel2.end;
+    return sel1 && sel2 && sel1.start === sel2.start && sel1.end === sel2.end;
 }
 
 function loadMacros() {
