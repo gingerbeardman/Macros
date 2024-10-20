@@ -25,9 +25,9 @@
                 {
                     "key": "com.gingerbeardman.macros.compressMacro",
                     "title": "Compress Macro",
-                    "description": "Sequences of actions of the same type are grouped together to reduce the total number of actions in the macro.\n\nNote: if you want to see the macro type character-by-character disable this setting, but be aware macros will become very large.",
+                    "description": "Sequences of actions of the same type are grouped together to reduce the total number of actions in the macro.\n\nNote: if you want to see the macro type character-by-character keep this disabled, but be aware macros will be very large.",
                     "type": "boolean",
-                    "default": true
+                    "default": false
                 }
             ]
         },
@@ -80,8 +80,7 @@
                             "title": "Record",
                             "image": "__builtin.add",
                             "tooltip": "Start Recording",
-                            "command": "com.gingerbeardman.macros.startRecording",
-                            "when": "!isRecording"
+                            "command": "com.gingerbeardman.macros.startRecording"
                         },
                         {
                             "title": "Delete",
