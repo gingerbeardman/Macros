@@ -140,6 +140,12 @@ exports.activate = function() {
             renameMacro(selectedItems[0]);
         }
     });
+    nova.commands.register("com.gingerbeardman.macros.duplicateMacro", (workspace) => {
+        let selectedItems = macrosView.selection;
+        if (selectedItems && selectedItems.length > 0) {
+            duplicateMacro(selectedItems[0]);
+        }
+    });
     nova.commands.register("com.gingerbeardman.macros.compressExistingMacro", (workspace) => {
         let selectedItems = macrosView.selection;
         if (selectedItems && selectedItems.length > 0) {
@@ -427,16 +433,43 @@ function compressExistingMacro(macroName) {
         saveMacros();
         macrosView.reload();
         
-        nova.workspace.showInformativeMessage(
-            `Macro "${macroName}" compressed successfully.\n` +
-            `Actions reduced from ${originalActionCount} to ${newActionCount}.`
-        );
+        // nova.workspace.showInformativeMessage(
+        //     `Macro "${macroName}" compressed successfully.\n` +
+        //     `Actions reduced from ${originalActionCount} to ${newActionCount}.`
+        // );
     } else {
-        nova.workspace.showInformativeMessage(
-            `Macro "${macroName}" is already optimally compressed.\n` +
-            `No changes were made.`
-        );
+        // nova.workspace.showInformativeMessage(
+        //     `Macro "${macroName}" is already optimally compressed.\n` +
+        //     `No changes were made.`
+        // );
     }
+}
+
+function duplicateMacro(macroName) {
+    let originalMacro = macros.find(m => m.name === macroName);
+    if (!originalMacro) {
+        nova.workspace.showErrorMessage(`Macro not found: ${macroName}`);
+        return;
+    }
+
+    let newName = `${macroName} (Copy)`;
+    let counter = 1;
+    while (macros.some(m => m.name === newName)) {
+        counter++;
+        newName = `${macroName} (Copy ${counter})`;
+    }
+
+    let newMacro = {
+        name: newName,
+        actions: JSON.parse(JSON.stringify(originalMacro.actions)),
+        isExpanded: false
+    };
+
+    macros.push(newMacro);
+    saveMacros();
+    macrosView.reload();
+
+    // nova.workspace.showInformativeMessage(`Macro "${macroName}" duplicated as "${newName}".`);
 }
 
 function removeMacro(name) {

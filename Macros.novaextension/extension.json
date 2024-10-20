@@ -102,6 +102,11 @@
                             "when": "viewItem != null"
                         },
                         {
+                            "title": "Duplicate",
+                            "command": "com.gingerbeardman.macros.duplicateMacro",
+                            "when": "viewItem != null"
+                        },
+                        {
                             "title": "Rename",
                             "command": "com.gingerbeardman.macros.renameMacro",
                             "when": "viewItem != null"
