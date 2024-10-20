@@ -41,10 +41,11 @@ It is possible to set whether or not the macro should use a local clipboard whil
 
 The following actions are recorded:
 
-- INS (text insertion)
-- DEL (text deletion)
-- POS (relative changes in cursor position)
+- INS (insert text)
+- DEL (delete text)
+- POS (relative change in cursor position)
 - SEL (selected text ranges)
+- REP (replace selected text)
 
 In addition to this, each macro stores its own expanded/unexpanded state in the sidebar.
 
