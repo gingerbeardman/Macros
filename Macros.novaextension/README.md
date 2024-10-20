@@ -24,9 +24,10 @@ These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
 ### Context Menu
 
-- Play
-- Rename
+- Compress
 - Delete
+- Rename
+- Play
 
 ## Recording
 

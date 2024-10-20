@@ -79,10 +79,10 @@ class MacrosDataProvider {
             case "POS":
                 return `POS ${action.delta > 0 ? '+' : ''}${action.delta}`;
             case "SEL":
-                return `SEL ${action.delta}..${action.delta+action.length+1}`;
+                return `SEL ${action.delta}`;
             case "DEL":
                 if (action.count) {
-                    return `DEL ${action.count} char`;
+                    return `DEL ${action.count}`;
                 } else {
                     return `DEL (details unavailable)`;
                 }
@@ -138,6 +138,12 @@ exports.activate = function() {
         let selectedItems = macrosView.selection;
         if (selectedItems && selectedItems.length > 0) {
             renameMacro(selectedItems[0]);
+        }
+    });
+    nova.commands.register("com.gingerbeardman.macros.compressExistingMacro", (workspace) => {
+        let selectedItems = macrosView.selection;
+        if (selectedItems && selectedItems.length > 0) {
+            compressExistingMacro(selectedItems[0]);
         }
     });
 
@@ -224,10 +230,12 @@ exports.activate = function() {
                         });
                     } else {
                         // If it's just a cursor movement, record it as a position change
-                        currentMacro.push({
-                            type: "POS",
-                            delta: selectionStartDelta
-                        });
+                        if (selectionStartDelta != 0) {
+                            currentMacro.push({
+                                type: "POS",
+                                delta: selectionStartDelta
+                            });
+                        }
                     }
                     
                     lastSelection = newSelection;
@@ -301,7 +309,6 @@ function startRecording() {
     
     nova.notifications.add(request).then(
         (response) => {
-            console.log("Macro \"recording started\" notification shown");
             if (response.actionIdx === 0) {  // "Stop" action was clicked
                 stopRecording();
             }
@@ -356,7 +363,6 @@ function stopRecording() {
     lastCursorPosition = null;
     lastSelection = null;
     if (currentMacro.length > 0) {
-        console.log("compressMacro", compressMacro);
         let finalMacro = (compressMacro == false) ? currentMacro : coalesceActions(currentMacro);
         let nextMacroName = "Macro " + (macros.length + 1);
         macros.push({ name: nextMacroName, actions: finalMacro });
@@ -401,6 +407,35 @@ function renameMacro(oldName) {
         });
     } else {
         nova.workspace.showErrorMessage("Macro not found: " + oldName);
+    }
+}
+
+function compressExistingMacro(macroName) {
+    let macroIndex = macros.findIndex(m => m.name === macroName);
+    if (macroIndex === -1) {
+        nova.workspace.showErrorMessage(`Macro not found: ${macroName}`);
+        return;
+    }
+
+    let macro = macros[macroIndex];
+    let originalActionCount = macro.actions.length;
+    let compressedActions = coalesceActions(macro.actions);
+    let newActionCount = compressedActions.length;
+
+    if (newActionCount < originalActionCount) {
+        macro.actions = compressedActions;
+        saveMacros();
+        macrosView.reload();
+        
+        nova.workspace.showInformativeMessage(
+            `Macro "${macroName}" compressed successfully.\n` +
+            `Actions reduced from ${originalActionCount} to ${newActionCount}.`
+        );
+    } else {
+        nova.workspace.showInformativeMessage(
+            `Macro "${macroName}" is already optimally compressed.\n` +
+            `No changes were made.`
+        );
     }
 }
 

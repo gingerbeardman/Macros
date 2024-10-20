@@ -92,8 +92,13 @@
                     ],
                     "contextCommands": [
                         {
-                            "title": "Replay",
-                            "command": "com.gingerbeardman.macros.replayMacro",
+                            "title": "Compress",
+                            "command": "com.gingerbeardman.macros.compressExistingMacro",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Delete",
+                            "command": "com.gingerbeardman.macros.removeMacro",
                             "when": "viewItem != null"
                         },
                         {
@@ -102,8 +107,8 @@
                             "when": "viewItem != null"
                         },
                         {
-                            "title": "Delete",
-                            "command": "com.gingerbeardman.macros.removeMacro",
+                            "title": "Replay",
+                            "command": "com.gingerbeardman.macros.replayMacro",
                             "when": "viewItem != null"
                         }
                     ]
