@@ -27,6 +27,7 @@
         {
             "key": "com.gingerbeardman.macros.slowPlaybackSpeed",
             "title": "Slow Playback Speed",
+            "description": " milliseconds",
             "type": "number",
             "default": 200
         },

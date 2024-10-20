@@ -38,8 +38,11 @@ When saving a macro, it will appear in the bundle editor as (currently) a read-o
 It is possible to set whether or not the macro should use a local clipboard while being executed. The local clipboard is generally advantageous (thus the default) but sometimes you may want the macro to affect the “real” clipboard and can disable this option.
 
 
-<!-- ### Configuration
+### Configuration
 
 To configure global preferences, open **Extensions → Extension Library...** then select Macros's **Settings** tab.
 
-You can also configure preferences on a per-project basis in **Project → Project Settings...** -->
+- Enable Slow Playback
+   - default: off
+- Slow Playback Speed
+   - default: 200
