@@ -37,13 +37,12 @@ class MacrosDataProvider {
                 return null;
             }
 
-            let item = new TreeItem(element, TreeItemCollapsibleState.Collapsed);
+            let item = new TreeItem(element, macro.isExpanded ? TreeItemCollapsibleState.Expanded : TreeItemCollapsibleState.Collapsed);
             item.command = "com.gingerbeardman.macros.replayMacro";
             item.contextValue = "macro";
             item.tooltip = `${element} (${macro.actions.length} actions)`;
             item.descriptiveText = `＝ ${macro.actions.length} actions`;
             item.image = "sidebar-list-item";
-            item.collapsibleState = TreeItemCollapsibleState.Expanded;
 
             return item;
         } else {
@@ -141,7 +140,34 @@ exports.activate = function() {
         }
     });
 
+    nova.commands.register("com.gingerbeardman.macros.toggleExpansion", (workspace) => {
+        let selectedItems = macrosView.selection;
+        if (selectedItems && selectedItems.length > 0) {
+            toggleMacroExpansion(selectedItems[0]);
+        }
+    });
+
     nova.subscriptions.add(macrosView);
+
+    macrosView.onDidExpandElement((element) => {
+        if (typeof element === 'string') {
+            let macro = macros.find(m => m.name === element);
+            if (macro) {
+                macro.isExpanded = true;
+                saveMacros();
+            }
+        }
+    });
+
+    macrosView.onDidCollapseElement((element) => {
+        if (typeof element === 'string') {
+            let macro = macros.find(m => m.name === element);
+            if (macro) {
+                macro.isExpanded = false;
+                saveMacros();
+            }
+        }
+    });
 
     nova.workspace.onDidAddTextEditor((editor) => {
         editor.onDidChange(() => {
@@ -220,6 +246,12 @@ function loadMacros() {
     if (savedMacros) {
         try {
             macros = JSON.parse(savedMacros);
+            // Ensure each macro has an isExpanded property
+            macros.forEach(macro => {
+                if (typeof macro.isExpanded === 'undefined') {
+                    macro.isExpanded = false; // Default to collapsed
+                }
+            });
         } catch (error) {
             console.error("Error parsing saved macros:", error);
             macros = [];
@@ -231,6 +263,15 @@ function loadMacros() {
 
 function saveMacros() {
     nova.workspace.config.set("com.gingerbeardman.macros", JSON.stringify(macros));
+}
+
+function toggleMacroExpansion(macroName) {
+    let macro = macros.find(m => m.name === macroName);
+    if (macro) {
+        macro.isExpanded = !macro.isExpanded;
+        saveMacros();
+        macrosView.reload();
+    }
 }
 
 function toggleRecording() {

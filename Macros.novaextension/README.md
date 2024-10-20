@@ -44,5 +44,5 @@ To configure global preferences, open **Extensions → Extension Library...** th
 
 - Enable Slow Playback
    - default: off
-- Slow Playback Speed
-   - default: 200
+- Slow Playback Speed (milliseconds)
+   - default: 100

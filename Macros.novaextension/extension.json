@@ -29,7 +29,7 @@
             "title": "Slow Playback Speed",
             "description": " milliseconds",
             "type": "number",
-            "default": 200
+            "default": 100
         },
     ],
 
@@ -60,7 +60,7 @@
                             "title": "Record",
                             "image": "__builtin.add",
                             "tooltip": "Start Recording",
-                            "command": "com.gingerbeardman.macros.toggleRecording"
+                            "command": "com.gingerbeardman.macros.startRecording"
                         },
                         {
                             "title": "Delete",
@@ -103,6 +103,12 @@
                 "title": "Replay Last Macro",
                 "command": "com.gingerbeardman.macros.replayLastMacro",
                 "shortcut": "cmd-shift-m"
+            }
+        ],
+        "sidebar": [
+            {
+                "title": "Toggle Expansion",
+                "command": "com.gingerbeardman.macros.toggleExpansion"
             }
         ]
     }
