@@ -1,0 +1,108 @@
+{
+    "bugs": "https://github.com/gingerbeardman/Macros/issues",
+    "description": "Record and replay macros in Nova editor",
+    "funding": "https://ko-fi.com/gingerbeardman",
+    "homepage": "https://www.gingerbeardman.com",
+    "identifier": "com.gingerbeardman.macros",
+    "name": "Macros",
+    "organization": "gingerbeardman",
+    "repository": "https://github.com/gingerbeardman/Macros",
+    "version": "1.0.0",
+    
+    "categories": ["sidebars"],
+    
+    "main": "main.js",
+    
+    "activationEvents": [
+        "onLanguage:*"
+    ],
+    
+    "config": [
+        {
+            "key": "com.gingerbeardman.macros.slowPlayback",
+            "title": "Enable Slow Playback",
+            "type": "boolean",
+            "default": false
+        },
+        {
+            "key": "com.gingerbeardman.macros.slowPlaybackSpeed",
+            "title": "Slow Playback Speed",
+            "type": "number",
+            "default": 200
+        },
+    ],
+
+    "sidebars": [
+        {
+            "id": "com.gingerbeardman.macros.sidebar",
+            "name": "Macros",
+            "smallImage": "sidebar-small",
+            "smallSelectedImage": "sidebar-small-selected",
+            "largeImage": "sidebar-medium",
+            "largeSelectedImage": "sidebar-medium-selected",
+            "sections": [
+                {
+                    "id": "com.gingerbeardman.macros.sidebar",
+                    "name": "Macros",
+                    "allowMultiple": false,
+                    "placeholderText": "No macros have been recorded.",
+                    "placeholderImage": "sidebar-large",
+                    "headerCommands": [
+                        {
+                            "title": "Play",
+                            "image": "__builtin.next",
+                            "tooltip": "Replay Selected",
+                            "command": "com.gingerbeardman.macros.replayMacro",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Record",
+                            "image": "__builtin.add",
+                            "tooltip": "Start Recording",
+                            "command": "com.gingerbeardman.macros.toggleRecording"
+                        },
+                        {
+                            "title": "Delete",
+                            "image": "__builtin.remove",
+                            "tooltip": "Delete Selected",
+                            "command": "com.gingerbeardman.macros.removeMacro",
+                            "when": "viewItem != null"
+                        }
+                    ],
+                    "contextCommands": [
+                        {
+                            "title": "Replay",
+                            "command": "com.gingerbeardman.macros.replayMacro",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Rename",
+                            "command": "com.gingerbeardman.macros.renameMacro",
+                            "when": "viewItem != null"
+                        },
+                        {
+                            "title": "Delete",
+                            "command": "com.gingerbeardman.macros.removeMacro",
+                            "when": "viewItem != null"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    
+    "commands": {
+        "editor": [
+            {
+                "title": "Toggle Macro Recording",
+                "command": "com.gingerbeardman.macros.toggleRecording",
+                "shortcut": "cmd-alt-m"
+            },
+            {
+                "title": "Replay Last Macro",
+                "command": "com.gingerbeardman.macros.replayLastMacro",
+                "shortcut": "cmd-shift-m"
+            }
+        ]
+    }
+}

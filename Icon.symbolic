@@ -1,0 +1,33 @@
+{
+  "iconScale" : 0.6779560368342596,
+  "version" : 1,
+  "symbol" : {
+    "name" : "record.circle",
+    "family" : "sf-symbols"
+  },
+  "id" : "24670896-9CE6-40DD-86CB-111B3E0DEB8D",
+  "bottomColor" : {
+    "red" : 0.55415625,
+    "blue" : 0.016788958786556847,
+    "green" : 0.1362557589818677,
+    "alpha" : 1
+  },
+  "topColor" : {
+    "blue" : 0.01033563759553586,
+    "green" : 0.2845447518612009,
+    "red" : 0.788235294117647,
+    "alpha" : 1
+  },
+  "iconOffset" : [
+    0,
+    0
+  ],
+  "shadowOpacity" : 0,
+  "symbolColor" : {
+    "green" : 1,
+    "blue" : 1,
+    "alpha" : 1,
+    "red" : 1
+  },
+  "shadowHeight" : 0.3
+}
