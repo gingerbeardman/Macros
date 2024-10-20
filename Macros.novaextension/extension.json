@@ -17,6 +17,10 @@
         "onLanguage:*"
     ],
     
+    "entitlements": {
+        "clipboard": true
+    },
+    
     "config": [
         {
             "title": "Recording",
@@ -46,7 +50,7 @@
                     "title": "Playback Speed (ms)",
                     "type": "enum",
                     "radio": false,
-                    "values": ["25", "50", "75", "100", "200", "300", "400", "500", "750", "1000"],
+                    "values": ["0", "25", "50", "75", "100", "150", "200", "250", "300", "400", "500", "750", "1000", "1500"],
                     "default": "100"
                 }
             ]
@@ -92,13 +96,14 @@
                     ],
                     "contextCommands": [
                         {
-                            "title": "Compress",
-                            "command": "com.gingerbeardman.macros.compressExistingMacro",
+                            "title": "Replay",
+                            "command": "com.gingerbeardman.macros.replayMacro",
                             "when": "viewItem != null"
                         },
+                        { "separator": true },
                         {
-                            "title": "Delete",
-                            "command": "com.gingerbeardman.macros.removeMacro",
+                            "title": "Compress",
+                            "command": "com.gingerbeardman.macros.compressExistingMacro",
                             "when": "viewItem != null"
                         },
                         {
@@ -111,9 +116,16 @@
                             "command": "com.gingerbeardman.macros.renameMacro",
                             "when": "viewItem != null"
                         },
+                        { "separator": true },
                         {
-                            "title": "Replay",
-                            "command": "com.gingerbeardman.macros.replayMacro",
+                            "title": "Copy",
+                            "command": "com.gingerbeardman.macros.viewMacro",
+                            "when": "viewItem != null"
+                        },
+                        { "separator": true },
+                        {
+                            "title": "Delete",
+                            "command": "com.gingerbeardman.macros.removeMacro",
                             "when": "viewItem != null"
                         }
                     ]
