@@ -1,6 +1,6 @@
 **Macros** provides recording and playback of editor changes.
 
-Useful to speed up repetitive edits.
+Useful to speed up repetitive edits, to play back text changes for the purposes of screen recordings.
 
 ## Usage
 
@@ -13,8 +13,8 @@ To run Macros:
 
 These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
-- Toggle Macro Recording
-- Play Most Recent Macro
+- Toggle Macro Recording (`Option`+`Cmd`+`m`)
+- Play Most Recent Macro (`Shift`+`Cmd`+`m`)
 
 ## Sidebar
 
@@ -45,6 +45,9 @@ The following actions are recorded:
 - POS (relative changes in cursor position)
 - SEL (selected text ranges)
 
+In addition to this, each macro stores its own expanded/unexpanded state in the sidebar.
+
+
 ### Configuration
 
 To configure global preferences, open **Extensions → Extension Library...** then select Macros's **Settings** tab.
@@ -52,6 +55,7 @@ To configure global preferences, open **Extensions → Extension Library...** th
 - Recording
   - Compress Macro
     - default: on
+
 - Playback
   - Adjust Playback Speed
     - default: off
