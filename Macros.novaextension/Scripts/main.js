@@ -1,5 +1,6 @@
+let compressMacro= nova.config.get('com.gingerbeardman.macros.compressMacro') || true;
 let slowPlaybackEnabled = nova.config.get('com.gingerbeardman.macros.slowPlayback') || false;
-let slowPlaybackSpeed = nova.config.get('com.gingerbeardman.macros.slowPlaybackSpeed') || 0;
+let slowPlaybackSpeed = nova.config.get('com.gingerbeardman.macros.slowPlaybackSpeed') || "0";
 
 var macros = [];
 var isRecording = false;
@@ -101,8 +102,9 @@ class MacrosDataProvider {
 }
 
 function handleConfigChange() {
+    compressMacro = nova.config.get('com.gingerbeardman.macros.compressMacro') || true;
     slowPlaybackEnabled = nova.config.get('com.gingerbeardman.macros.slowPlayback') || false;
-    slowPlaybackSpeed = nova.config.get('com.gingerbeardman.macros.slowPlaybackSpeed') || 0;
+    slowPlaybackSpeed = nova.config.get('com.gingerbeardman.macros.slowPlaybackSpeed') || "0";
 }
 
 exports.activate = function() {
@@ -379,9 +381,12 @@ function stopRecording() {
     lastCursorPosition = null;
     lastSelection = null;
     if (currentMacro.length > 0) {
-        let coalescedMacro = coalesceActions(currentMacro);
+        var finalMacro = currentMacro;
+        if (compressMacro) {
+            finalMacro = coalesceActions(currentMacro);
+        }
         let nextMacroName = "Macro " + (macros.length + 1);
-        macros.push({ name: nextMacroName, actions: coalescedMacro });
+        macros.push({ name: nextMacroName, actions: finalMacro });
         saveMacros();
         macrosView.reload();
     } else {
@@ -489,7 +494,7 @@ async function executeMacro(actions) {
 
         // If slow playback is enabled, add a delay between actions
         if (slowPlaybackEnabled) {
-            await new Promise(resolve => setTimeout(resolve, slowPlaybackSpeed));
+            await new Promise(resolve => setTimeout(resolve, Number(slowPlaybackSpeed)));
         }
     }
 

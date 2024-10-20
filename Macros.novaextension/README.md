@@ -13,8 +13,7 @@ To run Macros:
 
 These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
-- Start Recording Macro
-- Stop Recording Macro
+- Toggle Macro Recording
 - Play Most Recent Macro
 
 ## Sidebar
@@ -37,12 +36,24 @@ When saving a macro, it will appear in the bundle editor as (currently) a read-o
 
 It is possible to set whether or not the macro should use a local clipboard while being executed. The local clipboard is generally advantageous (thus the default) but sometimes you may want the macro to affect the “real” clipboard and can disable this option.
 
+### Actions
+
+The following actions are recorded:
+
+- INS (text insertion)
+- DEL (text deletion)
+- POS (relative changes in cursor position)
+- SEL (selected text ranges)
 
 ### Configuration
 
 To configure global preferences, open **Extensions → Extension Library...** then select Macros's **Settings** tab.
 
-- Enable Slow Playback
-   - default: off
-- Slow Playback Speed (milliseconds)
-   - default: 100
+- Recording
+  - Compress Macro
+    - default: on
+- Playback
+  - Adjust Playback Speed
+    - default: off
+  - Playback Speed (milliseconds)
+    - default: 100
