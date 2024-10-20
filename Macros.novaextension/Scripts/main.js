@@ -78,7 +78,7 @@ class MacrosDataProvider {
             case "POS":
                 return `POS ${action.delta > 0 ? '+' : ''}${action.delta}`;
             case "SEL":
-                return `SEL ${action.start}..${action.end}`;
+                return `SEL ${action.delta}..${action.delta+action.length+1}`;
             case "DEL":
                 if (action.count) {
                     return `DEL ${action.count} char`;
@@ -200,7 +200,7 @@ exports.activate = function() {
                 lastCursorPosition = newPosition;
             }
         });
-
+    
         editor.onDidChangeSelection(() => {
             if (isRecording) {
                 let newSelection = editor.selectedRange;
@@ -212,25 +212,25 @@ exports.activate = function() {
                 }
         
                 if (!areSelectionsEqual(newSelection, lastSelection)) {
-                    if (newSelection.length === 0) {
-                        // Cursor movement without selection
-                        let delta = newSelection.start - lastCursorPosition;
-                        if (delta !== 0) {
-                            currentMacro.push({
-                                type: "POS",
-                                delta: delta
-                            });
-                        }
-                    } else {
-                        // Selection
+                    let selectionStartDelta = newSelection.start - lastCursorPosition;
+                    let selectionLength = newSelection.end - newSelection.start;
+                    
+                    if (selectionLength > 0) {
                         currentMacro.push({
                             type: "SEL",
-                            start: newSelection.start,
-                            end: newSelection.end
+                            delta: selectionStartDelta,
+                            length: selectionLength
+                        });
+                    } else {
+                        // If it's just a cursor movement, record it as a position change
+                        currentMacro.push({
+                            type: "POS",
+                            delta: selectionStartDelta
                         });
                     }
+                    
                     lastSelection = newSelection;
-                    lastCursorPosition = newSelection.start;
+                    lastCursorPosition = newSelection.end;  // Update to end of selection
                 }
             }
         });
@@ -382,45 +382,53 @@ async function executeMacro(actions) {
     }
 
     let currentPosition = editor.selectedRange.start;
-    let currentSelection = editor.selectedRange;
+    let currentSelection = null;
 
     for (let action of actions) {
         await editor.edit((edit) => {
             switch (action.type) {
                 case "INS":
-                    if (currentSelection.length > 0) {
-                        // Replace the selected text
+                    if (currentSelection) {
+                        // If there's a selection, replace it
                         edit.replace(currentSelection, action.text);
                         currentPosition = currentSelection.start + action.text.length;
+                        currentSelection = null;
                     } else {
                         edit.insert(currentPosition, action.text);
                         currentPosition += action.text.length;
                     }
-                    currentSelection = new Range(currentPosition, currentPosition);
                     break;
                 case "DEL":
                     let startDelete = Math.max(0, currentPosition - action.count);
                     edit.delete(new Range(startDelete, currentPosition));
                     currentPosition = startDelete;
-                    currentSelection = new Range(currentPosition, currentPosition);
                     break;
                 case "POS":
                     currentPosition = Math.max(0, Math.min(currentPosition + action.delta, editor.document.length));
-                    currentSelection = new Range(currentPosition, currentPosition);
+                    currentSelection = null;
                     break;
                 case "SEL":
-                    currentSelection = new Range(action.start, action.end);
-                    currentPosition = action.end;
+                    let selectionStart = Math.max(0, Math.min(currentPosition + action.delta, editor.document.length));
+                    let selectionEnd = Math.max(0, Math.min(selectionStart + action.length, editor.document.length));
+                    currentSelection = new Range(selectionStart, selectionEnd);
+                    currentPosition = selectionEnd;  // Move cursor to end of selection
                     break;
             }
         });
 
-        // Set cursor position or selection after each action
-        editor.selectedRange = currentSelection;
+        // Update the visible selection
+        if (currentSelection) {
+            editor.selectedRange = currentSelection;
+        } else {
+            editor.selectedRange = new Range(currentPosition, currentPosition);
+        }
 
         // If slow playback is enabled, add a delay between actions
         if (slowPlaybackEnabled) {
             await new Promise(resolve => setTimeout(resolve, slowPlaybackSpeed));
         }
     }
+
+    // Ensure the cursor is at the final position after macro execution
+    editor.selectedRange = new Range(currentPosition, currentPosition);
 }
