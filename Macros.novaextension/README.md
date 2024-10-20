@@ -14,7 +14,7 @@ To run Macros:
 These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
 - Toggle Macro Recording (`Option`+`Cmd`+`m`)
-- Play Most Recent Macro (`Shift`+`Cmd`+`m`)
+- Replay Last Macro (`Shift`+`Cmd`+`m`)
 
 ## Sidebar
 
@@ -24,10 +24,12 @@ These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
 ### Context Menu
 
+- Replay
 - Compress
-- Delete
+- Duplicate
 - Rename
-- Play
+- Copy (to Clipboard)
+- Delete
 
 ## Recording
 

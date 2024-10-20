@@ -6,9 +6,10 @@ var macros = [];
 var isRecording = false;
 var currentMacro = [];
 var macrosView;
-var lastCursorPosition = null;
-var initialCursorPosition = null;
-var lastSelection = null;
+
+let lastText = "";
+let lastSelection = new Range(0, 0);
+let lastCursorPosition = 0;
 
 class MacrosDataProvider {
     getChildren(element) {
@@ -127,6 +128,12 @@ exports.activate = function() {
             replayMacro(selectedItems[0]);
         }
     });
+    nova.commands.register("com.gingerbeardman.macros.viewMacro", (workspace) => {
+        let selectedItems = macrosView.selection;
+        if (selectedItems && selectedItems.length > 0) {
+            viewMacro(selectedItems[0]);
+        }
+    });
     nova.commands.register("com.gingerbeardman.macros.replayLastMacro", replayLastMacro);
     nova.commands.register("com.gingerbeardman.macros.removeMacro", (workspace) => {
         let selectedItems = macrosView.selection;
@@ -183,70 +190,47 @@ exports.activate = function() {
     });
 
     nova.workspace.onDidAddTextEditor((editor) => {
-        editor.onDidChange(() => {
-            if (isRecording) {
-                let newPosition = editor.selectedRange.start;
-                
-                if (lastCursorPosition === null) {
-                    lastCursorPosition = newPosition;
-                    return;
-                }
-                
-                let diff = newPosition - lastCursorPosition;
-                
-                if (diff > 0) {
-                    // Characters inserted
-                    let insertedText = editor.getTextInRange(new Range(lastCursorPosition, newPosition));
-                    currentMacro.push({
-                        type: "INS",
-                        text: insertedText
-                    });
-                } else if (diff < 0) {
-                    // Characters deleted
-                    let count = Math.abs(diff);
-                    currentMacro.push({
-                        type: "DEL",
-                        count: count
-                    });
-                }
-                
-                lastCursorPosition = newPosition;
-            }
-        });
-    
         editor.onDidChangeSelection(() => {
             if (isRecording) {
                 let newSelection = editor.selectedRange;
                 
-                if (lastSelection === null) {
-                    lastSelection = newSelection;
-                    lastCursorPosition = newSelection.start;
-                    return;
-                }
-        
                 if (!areSelectionsEqual(newSelection, lastSelection)) {
-                    let selectionStartDelta = newSelection.start - lastCursorPosition;
-                    let selectionLength = newSelection.end - newSelection.start;
-                    
-                    if (selectionLength > 0) {
-                        currentMacro.push({
-                            type: "SEL",
-                            delta: selectionStartDelta,
-                            length: selectionLength
-                        });
-                    } else {
-                        // If it's just a cursor movement, record it as a position change
-                        if (selectionStartDelta != 0) {
-                            currentMacro.push({
-                                type: "POS",
-                                delta: selectionStartDelta
-                            });
-                        }
+                    let selectionDelta = newSelection.end - lastSelection.end;
+                    if (selectionDelta !== 0) {
+                        currentMacro.push({ type: "SEL", delta: selectionDelta });
+                        console.log(`Recorded SEL: ${selectionDelta}`);
                     }
-                    
-                    lastSelection = newSelection;
-                    lastCursorPosition = newSelection.end;  // Update to end of selection
                 }
+                
+                lastSelection = newSelection;
+                lastCursorPosition = newSelection.end;
+            }
+        });
+        
+        editor.onDidChange(() => {
+            if (isRecording) {
+                let newText = editor.getTextInRange(new Range(0, editor.document.length));
+                let newSelection = editor.selectedRange;
+                
+                // Check for deletion (including overwrite of selection)
+                let deletedCount = Math.max(lastText.length - newText.length, lastSelection.end - lastSelection.start);
+                if (deletedCount > 0) {
+                    currentMacro.push({ type: "DEL", count: deletedCount });
+                    console.log(`Recorded DEL: ${deletedCount}`);
+                }
+                
+                // Check for insertion (including overwrite)
+                if (newSelection.end > lastSelection.start) {
+                    let insertedText = newText.slice(lastSelection.start, newSelection.end);
+                    if (insertedText.length > 0) {
+                        currentMacro.push({ type: "INS", text: insertedText });
+                        console.log(`Recorded INS: ${insertedText}`);
+                    }
+                }
+                
+                lastText = newText;
+                lastSelection = newSelection;
+                lastCursorPosition = newSelection.end;
             }
         });
     });
@@ -304,10 +288,11 @@ function startRecording() {
     lastSelection = null;
     let editor = nova.workspace.activeTextEditor;
     if (editor) {
-        initialCursorPosition = editor.selectedRange.start;
-        lastCursorPosition = initialCursorPosition;
+        lastCursorPosition = editor.selectedRange.start;
+        lastSelection = editor.selectedRange;
     }
     
+    // Notification code remains the same
     let request = new NotificationRequest("macro-recording-started");
     request.title = nova.localize("Macro");
     request.body = nova.localize("Recording...");
@@ -325,58 +310,46 @@ function startRecording() {
     );
 }
 
-function coalesceActions(actions) {
-    let coalesced = [];
-    let current = null;
-
-    for (let action of actions) {
-        if (!current) {
-            current = {...action};
-        } else if (current.type === action.type) {
-            switch (current.type) {
-                case "INS":
-                    current.text += action.text;
-                    break;
-                case "DEL":
-                    current.count += action.count;
-                    break;
-                case "POS":
-                    current.delta += action.delta;
-                    break;
-                case "SEL":
-                    // For SEL, we update to the latest selection
-                    current = {...action};
-                    break;
-                default:
-                    coalesced.push(current);
-                    current = {...action};
-            }
-        } else {
-            coalesced.push(current);
-            current = {...action};
-        }
-    }
-
-    if (current) {
-        coalesced.push(current);
-    }
-
-    return coalesced;
-}
-
 function stopRecording() {
     isRecording = false;
     lastCursorPosition = null;
     lastSelection = null;
     if (currentMacro.length > 0) {
-        let finalMacro = (compressMacro == false) ? currentMacro : coalesceActions(currentMacro);
+        let finalMacro = compressMacro ? coalesceActions(currentMacro) : currentMacro;
         let nextMacroName = "Macro " + (macros.length + 1);
-        macros.push({ name: nextMacroName, actions: finalMacro });
+        macros.push({ name: nextMacroName, actions: finalMacro, isExpanded: false });
         saveMacros();
         macrosView.reload();
     } else {
         console.log("No actions recorded in this macro.");
     }
+}
+
+function coalesceActions(actions) {
+    return actions.reduce((coalesced, action) => {
+        const lastAction = coalesced[coalesced.length - 1];
+        
+        if (!lastAction || lastAction.type !== action.type) {
+            coalesced.push({...action});
+        } else {
+            switch (action.type) {
+                case "INS":
+                    lastAction.text += action.text;
+                    break;
+                case "DEL":
+                    lastAction.count += action.count;
+                    break;
+                case "POS":
+                    lastAction.delta += action.delta;
+                    break;
+                case "SEL":
+                    coalesced[coalesced.length - 1] = {...action};
+                    break;
+            }
+        }
+        
+        return coalesced;
+    }, []);
 }
 
 async function replayLastMacro() {
@@ -392,6 +365,17 @@ async function replayMacro(name) {
     let macro = macros.find(m => m.name === name);
     if (macro) {
         await executeMacro(macro.actions);
+    } else {
+        nova.beep();
+        console.log("Macro not found: " + name);
+    }
+}
+
+async function viewMacro(name) {
+    let macro = macros.find(m => m.name === name);
+    if (macro) {
+        nova.clipboard.writeText(JSON.stringify(macro));
+        // nova.workspace.showInformativeMessage(JSON.stringify(macro));
     } else {
         nova.beep();
         console.log("Macro not found: " + name);
@@ -432,16 +416,6 @@ function compressExistingMacro(macroName) {
         macro.actions = compressedActions;
         saveMacros();
         macrosView.reload();
-        
-        // nova.workspace.showInformativeMessage(
-        //     `Macro "${macroName}" compressed successfully.\n` +
-        //     `Actions reduced from ${originalActionCount} to ${newActionCount}.`
-        // );
-    } else {
-        // nova.workspace.showInformativeMessage(
-        //     `Macro "${macroName}" is already optimally compressed.\n` +
-        //     `No changes were made.`
-        // );
     }
 }
 
@@ -468,8 +442,6 @@ function duplicateMacro(macroName) {
     macros.push(newMacro);
     saveMacros();
     macrosView.reload();
-
-    // nova.workspace.showInformativeMessage(`Macro "${macroName}" duplicated as "${newName}".`);
 }
 
 function removeMacro(name) {
@@ -491,54 +463,78 @@ async function executeMacro(actions) {
         return;
     }
 
-    let currentPosition = editor.selectedRange.start;
-    let currentSelection = null;
+    let cursorPosition = editor.selectedRange.end;
+    let selectionAnchor = cursorPosition;
+
+    console.log("Starting macro execution");
+    console.log(`Initial state: cursor=${cursorPosition}, anchor=${selectionAnchor}`);
+    console.log(`Total actions: ${actions.length}`);
 
     for (let action of actions) {
-        await editor.edit((edit) => {
-            switch (action.type) {
-                case "INS":
-                    if (currentSelection) {
-                        // If there's a selection, replace it
-                        edit.replace(currentSelection, action.text);
-                        currentPosition = currentSelection.start + action.text.length;
-                        currentSelection = null;
-                    } else {
-                        edit.insert(currentPosition, action.text);
-                        currentPosition += action.text.length;
-                    }
-                    break;
-                case "DEL":
-                    let startDelete = Math.max(0, currentPosition - action.count);
-                    edit.delete(new Range(startDelete, currentPosition));
-                    currentPosition = startDelete;
-                    break;
-                case "POS":
-                    currentPosition = Math.max(0, Math.min(currentPosition + action.delta, editor.document.length));
-                    currentSelection = null;
-                    break;
-                case "SEL":
-                    let selectionStart = Math.max(0, Math.min(currentPosition + action.delta, editor.document.length));
-                    let selectionEnd = Math.max(0, Math.min(selectionStart + action.length, editor.document.length));
-                    currentSelection = new Range(selectionStart, selectionEnd);
-                    currentPosition = selectionEnd;  // Move cursor to end of selection
-                    break;
-            }
-        });
+        console.log(`\nExecuting action: ${JSON.stringify(action)}`);
+        console.log(`Before: cursor=${cursorPosition}, anchor=${selectionAnchor}`);
 
-        // Update the visible selection
-        if (currentSelection) {
-            editor.selectedRange = currentSelection;
-        } else {
-            editor.selectedRange = new Range(currentPosition, currentPosition);
-        }
+        try {
+            await editor.edit((edit) => {
+                switch (action.type) {
+                    case "INS":
+                        let insertPosition = Math.min(selectionAnchor, cursorPosition);
+                        if (selectionAnchor !== cursorPosition) {
+                            let deleteRange = new Range(insertPosition, Math.max(selectionAnchor, cursorPosition));
+                            console.log(`Deleting selection: ${deleteRange.start}-${deleteRange.end}`);
+                            edit.delete(deleteRange);
+                        }
+                        console.log(`Inserting "${action.text.replace(/\n/g, '\\n')}" at position ${insertPosition}`);
+                        edit.insert(insertPosition, action.text);
+                        cursorPosition = insertPosition + action.text.length;
+                        selectionAnchor = cursorPosition;
+                        break;
+                    case "DEL":
+                        if (selectionAnchor !== cursorPosition) {
+                            let deleteRange = new Range(Math.min(selectionAnchor, cursorPosition), Math.max(selectionAnchor, cursorPosition));
+                            console.log(`Deleting selection: ${deleteRange.start}-${deleteRange.end}`);
+                            edit.delete(deleteRange);
+                            cursorPosition = deleteRange.start;
+                            selectionAnchor = cursorPosition;
+                        } else {
+                            let startPosition = Math.max(0, cursorPosition - action.count);
+                            let deleteRange = new Range(startPosition, cursorPosition);
+                            console.log(`Deleting: ${deleteRange.start}-${deleteRange.end}`);
+                            edit.delete(deleteRange);
+                            cursorPosition = startPosition;
+                            selectionAnchor = cursorPosition;
+                        }
+                        break;
+                    case "SEL":
+                        if (action.delta < 0) {
+                            selectionAnchor = cursorPosition;
+                            cursorPosition = Math.max(0, cursorPosition + action.delta);
+                        } else {
+                            cursorPosition = Math.min(editor.document.length, cursorPosition + action.delta);
+                        }
+                        console.log(`Selecting ${action.delta > 0 ? 'forward' : 'backward'} to ${cursorPosition}`);
+                        break;
+                    case "POS":
+                        cursorPosition = Math.max(0, Math.min(editor.document.length, cursorPosition + action.delta));
+                        selectionAnchor = cursorPosition;
+                        console.log(`Moving cursor to ${cursorPosition}`);
+                        break;
+                }
+            });
 
-        // If slow playback is enabled, add a delay between actions
-        if (slowPlaybackEnabled) {
-            await new Promise(resolve => setTimeout(resolve, Number(slowPlaybackSpeed) ));
+            console.log(`After: cursor=${cursorPosition}, anchor=${selectionAnchor}`);
+            console.log(`Current text: "${editor.getTextInRange(new Range(0, editor.document.length)).replace(/\n/g, '\\n')}"`);
+
+            // Update the editor's selection
+            editor.selectedRange = new Range(Math.min(selectionAnchor, cursorPosition), Math.max(selectionAnchor, cursorPosition));
+
+        } catch (error) {
+            console.error(`Error executing action: ${error.message}`);
+            console.error(error.stack);
         }
     }
 
-    // Ensure the cursor is at the final position after macro execution
-    editor.selectedRange = new Range(currentPosition, currentPosition);
+    console.log("\nMacro execution completed");
+    console.log(`Final text: "${editor.getTextInRange(new Range(0, editor.document.length)).replace(/\n/g, '\\n')}"`);
+    console.log(`Final state: cursor=${cursorPosition}, anchor=${selectionAnchor}`);
 }
