@@ -79,10 +79,10 @@ class MacrosDataProvider {
             case "POS":
                 return `POS ${action.delta > 0 ? '+' : ''}${action.delta}`;
             case "SEL":
-                return `SEL ${action.delta}..${action.delta+action.length+1}`;
+                return `SEL ${action.delta > 0 ? '+' : ''}${action.delta}`;
             case "DEL":
                 if (action.count) {
-                    return `DEL ${action.count} char`;
+                    return `DEL ${action.count}`;
                 } else {
                     return `DEL (details unavailable)`;
                 }
@@ -335,13 +335,53 @@ function startRecording() {
     );
 }
 
+function coalesceActions(actions) {
+    let coalesced = [];
+    let current = null;
+
+    for (let action of actions) {
+        if (!current) {
+            current = {...action};
+        } else if (current.type === action.type) {
+            switch (current.type) {
+                case "INS":
+                    current.text += action.text;
+                    break;
+                case "DEL":
+                    current.count += action.count;
+                    break;
+                case "POS":
+                    current.delta += action.delta;
+                    break;
+                case "SEL":
+                    // For SEL, we update to the latest selection
+                    current = {...action};
+                    break;
+                default:
+                    coalesced.push(current);
+                    current = {...action};
+            }
+        } else {
+            coalesced.push(current);
+            current = {...action};
+        }
+    }
+
+    if (current) {
+        coalesced.push(current);
+    }
+
+    return coalesced;
+}
+
 function stopRecording() {
     isRecording = false;
     lastCursorPosition = null;
     lastSelection = null;
     if (currentMacro.length > 0) {
+        let coalescedMacro = coalesceActions(currentMacro);
         let nextMacroName = "Macro " + (macros.length + 1);
-        macros.push({ name: nextMacroName, actions: currentMacro });
+        macros.push({ name: nextMacroName, actions: coalescedMacro });
         saveMacros();
         macrosView.reload();
     } else {
