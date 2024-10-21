@@ -1,2 +1,3 @@
-Macros.novaextension/.nova/Configuration.json
+.nova/*
+Macros.novaextension/.nova/*
 Docs/*
