@@ -47,7 +47,6 @@ The following actions are recorded:
 - DEL (delete text)
 - POS (relative change in cursor position)
 - SEL (selected text ranges)
-- REP (replace selected text)
 
 In addition to this, each macro stores its own expanded/unexpanded state in the sidebar.
 
