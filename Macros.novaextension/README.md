@@ -9,12 +9,16 @@ To run Macros:
 - Select the **Editor → Macros** menu item; or
 - Open the command palette and type `Macros`
 
+
 ## Commands
 
 These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 
 - Toggle Macro Recording (`Option`+`Cmd`+`m`)
 - Replay Last Macro (`Shift`+`Cmd`+`m`)
+
+Last Macro refers to the one most recently recorded—the one at the bottom of the list.
+
 
 ## Sidebar
 
@@ -31,6 +35,7 @@ These can be summoned from the Editor meny, Command Palette, or by shortcut key:
 - Copy (to Clipboard)
 - Delete
 
+
 ## Recording
 
 A nofication will signal recording has begun. When done, you select Stop and the macro will be automatically saved to the sidebar. You can then replay, compress, delete, etc. the recorded macro.
@@ -42,12 +47,12 @@ The following actions are recorded:
 - INS (insert text)
 - DEL (delete text)
 - POS (relative change in cursor position)
-- SEL (selected text ranges)
+- SEL (relative range of selected text)
 
 In addition to this, each macro stores its own expanded/unexpanded state for the sidebar.
 
 
-### Configuration
+## Configuration
 
 To configure global preferences, open **Extensions → Extension Library...** then select Macros's **Settings** tab.
 
