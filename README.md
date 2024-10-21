@@ -1,3 +1,5 @@
+> WORK IN PROGRESS, currently broken in many ways
+
 # Macros
 
 Macros is an extension for the [Nova editor](https://nova.app).
