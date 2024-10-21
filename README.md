@@ -1,4 +1,4 @@
-> WORK IN PROGRESS
+> WORK IN PROGRESS, currently broken in many ways
 
 # Macros
 
